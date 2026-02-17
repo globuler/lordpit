@@ -36,6 +36,7 @@ enum {
 typedef enum {
     TD_NONE,
     TD_SINGLE_TAP,
+    TD_DOUBLE_SINGLE_TAP,
     TD_DOUBLE_TAP,
 } td_state_t;
 
@@ -49,7 +50,10 @@ static td_copy_data_t td_v_data = {KC_V};
 
 td_state_t current_dance(tap_dance_state_t *state) {
     if (state->count == 1) return TD_SINGLE_TAP;
-    if (state->count == 2) return TD_DOUBLE_TAP;
+    if (state->count == 2) {
+        if (state->interrupted) return TD_DOUBLE_SINGLE_TAP;
+        return TD_DOUBLE_TAP;
+    }
     return TD_NONE;
 }
 
@@ -60,24 +64,41 @@ bool is_mac(void) {
 void td_copypaste_finished(tap_dance_state_t *state, void *user_data) {
     td_copy_data_t *data = (td_copy_data_t *)user_data;
     switch (current_dance(state)) {
-        case TD_SINGLE_TAP: register_code(data->keycode); break;
-        case TD_DOUBLE_TAP:
-            if (is_mac())  tap_code16(LGUI(data->keycode));
-            else tap_code16(LCTL(data->keycode));
+        case TD_SINGLE_TAP:
+            register_code(data->keycode);
             break;
-        default: break;
+        case TD_DOUBLE_SINGLE_TAP:
+            // fast typing: sends two single taps instead of the double tap action
+            tap_code(data->keycode);
+            register_code(data->keycode);
+            break;
+        case TD_DOUBLE_TAP:
+            if (is_mac()) tap_code16(LGUI(data->keycode));
+            else          tap_code16(LCTL(data->keycode));
+            break;
+        default:
+            break;
     }
 }
 
+
 void td_copypaste_reset(tap_dance_state_t *state, void *user_data) {
     td_copy_data_t *data = (td_copy_data_t *)user_data;
-    if (current_dance(state) == TD_SINGLE_TAP) unregister_code(data->keycode);
+    switch (current_dance(state)) {
+        case TD_SINGLE_TAP:
+        case TD_DOUBLE_SINGLE_TAP:
+            unregister_code(data->keycode);
+            break;
+        default:
+            break;
+    }
 }
 
+
 tap_dance_action_t tap_dance_actions[] = {
-    [TD_C] = ACTION_TAP_DANCE_FN_ADVANCED_WITH_DATA(NULL, td_copypaste_finished, td_copypaste_reset, &td_c_data),
-    [TD_X] = ACTION_TAP_DANCE_FN_ADVANCED_WITH_DATA(NULL, td_copypaste_finished, td_copypaste_reset, &td_x_data),
-    [TD_V] = ACTION_TAP_DANCE_FN_ADVANCED_WITH_DATA(NULL, td_copypaste_finished, td_copypaste_reset, &td_v_data),
+    [TD_C] = { .fn = {NULL, td_copypaste_finished, td_copypaste_reset}, .user_data = &td_c_data },
+    [TD_X] = { .fn = {NULL, td_copypaste_finished, td_copypaste_reset}, .user_data = &td_x_data },
+    [TD_V] = { .fn = {NULL, td_copypaste_finished, td_copypaste_reset}, .user_data = &td_v_data },
 };
 
 typedef enum {
