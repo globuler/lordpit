@@ -123,7 +123,7 @@ combo_t key_combos[] = {
     [J_K_ENT] = COMBO(comboent, KC_ENT),
     [J_K_ENTM] = COMBO(comboentm, KC_ENT),
     [F_J_CPL] = COMBO(combocaps, KC_CAPS),
-}
+};
 
 #define WIN DF(LAYER_BASEW)
 #define MAC DF(LAYER_BASE)
