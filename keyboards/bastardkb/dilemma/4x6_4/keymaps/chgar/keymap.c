@@ -101,7 +101,7 @@ combo_t key_combos[] = {
     [D_F_ESCM] = COMBO(comboescm, KC_ESC),
     [J_K_ENT] = COMBO(comboent, KC_ENT),
     [J_K_ENTM] = COMBO(comboentm, KC_ENT),
-    [D_F_E] = COMBO(combocaps, KC_CAPS),
+    [D_F_CPL] = COMBO(combocaps, KC_CAPS),
 }
 
 #define WIN DF(LAYER_BASEW)
