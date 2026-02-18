@@ -260,3 +260,108 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 void rgb_matrix_update_pwm_buffers(void);
 #endif // RGB_MATRIX_ENABLE
 
+bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    uint8_t layer = get_highest_layer(layer_state | default_layer_state);
+    if (!rgb_matrix_is_enabled()) {
+        return false;
+    }
+
+    for (uint8_t i = led_min; i < led_max; i++) {
+        bool is_underglow = (g_led_config.flags[i] & LED_FLAG_INDICATOR);
+        uint8_t row = 0xFF;
+        uint8_t col = 0xFF;
+
+        for (uint8_t r = 0; r < MATRIX_ROWS; r++) {
+            for (uint8_t c = 0; c < MATRIX_COLS; c++) {
+                if (g_led_config.matrix_co[r][c] == 1) {
+                    row = r;
+                    col = c;
+                    break;
+                }
+            }
+            if (row != 0xFF) break;
+        }
+
+        if (is_underglow) {
+            switch(layer) {
+                case LAYER_BASE:
+                case LAYER_BASEW:
+                    rgb_matrix_set_color(i, RGB_WHITE);
+                    break;
+                case LAYER_NAV:
+                    rgb_matrix_set_color(i, RGB_CYAN);
+                    break;
+                case LAYER_NUM:
+                    rgb_matrix_set_color(i, RGB_BLUE);
+                    break;
+                case LAYER_SYM:
+                    rgb_matrix_set_color(i, RGB_GREEN);
+                    break;
+                case LAYER_MOUSE:
+                    rgb_matrix_set_color(i, RGB_YELLOW);
+                    break;
+                case LAYER_POINTER:
+                    rgb_matrix_set_color(i, RGB_RED);
+                    break;
+            }
+            continue;
+        }
+
+        if (row == 0xFF || col == 0xFF) {
+            continue;
+        }
+
+        uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col, row});
+        if (keycode == KC_TRNS || keycode == KC_NO || keycode == XXXXXXX) {
+            continue;
+        }
+
+        switch (layer) {
+            case LAYER_BASE:
+            case LAYER_BASEW: {
+                bool is_homerow_mod = false;
+                if (keycode == LSFT_T(KC_F) || keycode == LSFT_T(KC_J)) {
+                    rgb_matrix_set_color(i, RGB_BLUE);
+                    is_homerow_mod = true;
+                }
+                else if (keycode == LGUI_T(KC_D) || keycode == LGUI_T(KC_K) ||
+                        keycode == LCTL_T(KC_D) || keycode == LCTL_T(KC_K)) {
+                    rgb_matrix_set_color(i, RGB_MAGENTA);
+                    is_homerow_mod = true;
+                }
+                else if (keycode == LALT_T(KC_S) || keycode == LALT_T(KC_L)) {
+                    rgb_matrix_set_color(i, RGB_GREEN);
+                    is_homerow_mod = true;
+                }
+                else if (keycode == LCTL_T(KC_A) || keycode == LCTL_T(KC_SCLN) ||
+                        keycode == LGUI_T(KC_A) || keycode == LGUI_T(KC_SCLN)) {
+                    rgb_matrix_set_color(i, RGB_RED);
+                    is_homerow_mod = true;
+                }
+
+                if (!is_homerow_mod) {
+                    rgb_matrix_set_color(i, RGB_WHITE);
+                }
+                break;
+            }
+            case LAYER_NAV:
+                rgb_matrix_set_color(i, RGB_CYAN);
+                break;
+            case LAYER_NUM:
+                rgb_matrix_set_color(i, RGB_BLUE);
+                break;
+            case LAYER_SYM:
+                rgb_matrix_set_color(i, RGB_GREEN);
+                break;
+            case LAYER_MOUSE:
+                rgb_matrix_set_color(i, RGB_YELLOW);
+                break;
+            case LAYER_POINTER:
+                rgb_matrix_set_color(i, RGB_RED);
+                break;
+        }
+    }
+
+    return false;
+}
+#endif
